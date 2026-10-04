@@ -1,0 +1,81 @@
+*commit-hike.txt*  Your commits walk a hiking trail
+
+==============================================================================
+CONTENTS                                                         *commit-hike*
+
+  Install ............................................ |commit-hike-install|
+  Setup ................................................ |commit-hike-setup|
+  Status line ..................................... |commit-hike-statusline|
+  Commands ........................................ |commit-hike-commands|
+
+Commit Hike turns your commits into a hiking journey: every commit moves you
+along a real trail (the Chornohora ridge, the Camino, Frodo's road...). The
+same program powers the JetBrains and VS Code plugins; your progress is
+shared with them. Nothing is written to your repositories and nothing leaves
+your computer.
+
+==============================================================================
+INSTALL                                                  *commit-hike-install*
+
+The plugin needs Neovim 0.10+ and the core, `commit-hike`:
+>sh
+  curl -fsSL https://raw.githubusercontent.com/Shchusia/Commit-Hike/master/scripts/install.sh | sh
+<
+Windows: `irm .../scripts/install.ps1 | iex`. Then, once (not needed when you
+already use Commit Hike in an IDE): |:CommitHike| init.
+
+The plugin is the folder plugins/neovim of the repository. lazy.nvim:
+>lua
+  {
+    "Shchusia/Commit-Hike",
+    config = function(plugin)
+      vim.opt.rtp:append(plugin.dir .. "/plugins/neovim")
+      require("commit-hike").setup()
+    end,
+  }
+<
+==============================================================================
+SETUP                                                      *commit-hike-setup*
+
+>lua
+  require("commit-hike").setup({
+    bin = "commit-hike",  -- path to the core
+    icon = "🥾",          -- before the distance; "" for none
+    lang = nil,           -- nil: Commit Hike's setting, else the editor's
+    interval = 60,        -- seconds between background refreshes; 0: off
+    watch_head = true,    -- refresh right after any commit
+  })
+<
+==============================================================================
+STATUS LINE                                           *commit-hike-statusline*
+
+`require("commit-hike").statusline()` returns the line, e.g. >
+  🥾 16,0 км · Озеро Несамовите
+<It never blocks: the text is fetched in the background on start, on
+|FocusGained| and |DirChanged|, every `interval` seconds and within a second
+of a commit made anywhere (it watches .git/logs/HEAD). New commits are counted
+on the way (`commit-hike prompt --scan`). Empty until there is something to
+show.
+
+lualine: >lua
+  lualine_x = { require("commit-hike").statusline }
+<Plain 'statusline': >vim
+  set statusline+=%{v:lua.require'commit-hike'.statusline()}
+<
+==============================================================================
+COMMANDS                                         *commit-hike-commands* *:CommitHike*
+
+:CommitHike [status]       Where you are: the trail, the distance, the last and
+                           the next stop, today, the streak. q closes it.
+:CommitHike scan           Count new commits of this repository now.
+:CommitHike route [id]     Choose the trail of your main journey.
+:CommitHike difficulty [easy|medium|hard]
+                           How far a typical day of commits takes you. Applies
+                           to commits from now on.
+:CommitHike lang [auto|en|uk|pl|de|es]
+                           The language of route texts, for every editor.
+:CommitHike init           First-time setup with your commit e-mail.
+
+|:checkhealth| commit-hike checks Neovim, the core and the setup.
+
+ vim:tw=78:ts=8:ft=help:norl:
