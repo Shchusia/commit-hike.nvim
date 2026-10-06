@@ -9,8 +9,10 @@ Your commits walk a hiking trail, in your status line:
 A thin wrapper around `commit-hike`, the same core as the
 [Commit Hike](https://github.com/Shchusia/Commit-Hike) plugins for JetBrains
 IDEs and VS Code (they share your progress). Ten routes, from the Carpathians
-to the Camino, in English, Ukrainian, Polish, German and Spanish. Nothing
-leaves your computer.
+to the Camino, in English, Ukrainian, Polish, German and Spanish, and more
+from [commit-hike.dev](https://commit-hike.dev) with `:CommitHike find`.
+Nothing about you leaves your computer: the site is only asked for its public
+catalogue when you run `:CommitHike find` or `:CommitHike install`.
 
 ## Install
 
@@ -45,7 +47,8 @@ or without plugins: `set statusline+=%{v:lua.require'commit-hike'.statusline()}`
 
 `:CommitHike` shows where you are; `:CommitHike scan`, `:CommitHike route`,
 `:CommitHike difficulty`, `:CommitHike lang` and `:CommitHike init` do what
-they say. Commits made anywhere (the terminal, fugitive, lazygit) reach the
+they say. `:CommitHike find lakes` searches the routes on
+[commit-hike.dev](https://commit-hike.dev): pick one to install and walk it. Commits made anywhere (the terminal, fugitive, lazygit) reach the
 status line within a second. `:help commit-hike` has the details and
 `:checkhealth commit-hike` checks the setup.
 

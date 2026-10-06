@@ -69,6 +69,12 @@ COMMANDS                                         *commit-hike-commands* *:Commit
                            the next stop, today, the streak. q closes it.
 :CommitHike scan           Count new commits of this repository now.
 :CommitHike route [id]     Choose the trail of your main journey.
+:CommitHike find [text]    Routes from commit-hike.dev, the routes website:
+                           pick one to install it (or update it, when its
+                           author published a new version) and walk it.
+:CommitHike install {id}   Install a route from the site by its id. A route of
+                           your own with the same id is replaced only if you
+                           say so.
 :CommitHike difficulty [easy|medium|hard]
                            How far a typical day of commits takes you. Applies
                            to commits from now on.
@@ -77,5 +83,9 @@ COMMANDS                                         *commit-hike-commands* *:Commit
 :CommitHike init           First-time setup with your commit e-mail.
 
 |:checkhealth| commit-hike checks Neovim, the core and the setup.
+
+The site is contacted only by :CommitHike find and :CommitHike install, for its
+public catalogue and route packs; nothing about you is sent. COMMIT_HIKE_SITE
+points the core at another address (a mirror, a local copy).
 
  vim:tw=78:ts=8:ft=help:norl:

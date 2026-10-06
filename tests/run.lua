@@ -96,6 +96,72 @@ ch._core({ "difficulty", "--set", "hard" }, function(ok, data)
 end)
 check("difficulty via the core", vim.wait(3000, function() return done end, 20))
 
+-- routes from the site: a fake site (python3's http.server over a folder) and the real core
+if vim.fn.executable("python3") == 1 then
+  local root = vim.fn.tempname()
+  vim.fn.mkdir(root .. "/api/routes", "p")
+  vim.fn.mkdir(root .. "/routes/lake-walk", "p")
+  local pack = vim.fn.tempname()
+  vim.system({ bin, "route", "template", "--id", "lake-walk", "--path", pack }, { text = true }):wait()
+  vim.system({ "python3", "-c", "import shutil,sys; shutil.make_archive(sys.argv[1], 'zip', sys.argv[2])", root .. "/routes/lake-walk/download", pack }):wait()
+  os.rename(root .. "/routes/lake-walk/download.zip", root .. "/routes/lake-walk/download")
+  local card = { id = "lake-walk", title = "Lake Walk", titles = { uk = "Озерна стежка" }, author = "Olena", length_m = 5000, stops = 3, version = 2, page = "x" }
+  local function put(path, value)
+    local f = io.open(root .. path, "w")
+    f:write(vim.json.encode(value))
+    f:close()
+  end
+  put("/api/routes/index.html", { total = 1, page = 1, pages = 1, routes = { card } })
+  put("/api/routes/lake-walk", card)
+  local port = 18000 + math.random(1000)
+  local server = vim.system({ "python3", "-m", "http.server", tostring(port), "--bind", "127.0.0.1", "--directory", root })
+  vim.wait(3000, function()
+    return vim.system({ "python3", "-c", "import socket; socket.create_connection(('127.0.0.1', " .. port .. "), 1)" }):wait().code == 0
+  end, 100)
+  vim.env.COMMIT_HIKE_SITE = "http://127.0.0.1:" .. port
+
+  local picks, selects, notes = {}, {}, {}
+  local real_select, real_notify = vim.ui.select, vim.notify
+  vim.ui.select = function(items, opts, on_choice)
+    table.insert(selects, { prompt = opts.prompt, labels = vim.tbl_map(opts.format_item or tostring, items) })
+    on_choice(table.remove(picks, 1) and items[1] or nil)
+  end
+  vim.notify = function(m)
+    table.insert(notes, m)
+  end
+  -- :CommitHike find lake → the list → pick it → installed → "Walk it now?" → yes → count history? → yes
+  picks = { true, true, true }
+  vim.cmd("CommitHike find lake walk")
+  local function on_route()
+    local res = vim.system({ bin, "status", "--repo", repo }, { text = true }):wait()
+    local ok, env = pcall(vim.json.decode, res.stdout)
+    return ok and env.data and env.data.global and env.data.global.route and env.data.global.route.id
+  end
+  local walked = vim.wait(8000, function()
+    return #selects >= 3 and on_route() == "lake-walk"
+  end, 50)
+  check("site: find lists the route in the editor's language", selects[1] and selects[1].labels[1]:match("^Озерна стежка · 5,0 км · автор: Olena") ~= nil, selects)
+  check("site: installed and walked", walked, { selects = selects, notes = notes, route = on_route() })
+  check("site: installed message", vim.iter(notes):any(function(m) return m:match("Встановлено: .*версія 2") ~= nil end), notes)
+  -- again: now it's marked as installed
+  selects, picks = {}, {}
+  vim.cmd("CommitHike find")
+  vim.wait(5000, function() return #selects >= 1 end, 50)
+  check("site: marked installed", selects[1] and selects[1].labels[1]:match("%[✓ встановлено%]") ~= nil, selects)
+  -- offline: a clear message
+  vim.env.COMMIT_HIKE_SITE = "http://127.0.0.1:1"
+  notes = {}
+  vim.cmd("CommitHike find")
+  check("site: offline is explained", vim.wait(8000, function()
+    return vim.iter(notes):any(function(m) return m:match("сайтом маршрутів") ~= nil end)
+  end, 50), notes)
+  vim.ui.select, vim.notify = real_select, real_notify
+  vim.env.COMMIT_HIKE_SITE = nil
+  server:kill(15)
+else
+  io.stdout:write("skipping the site tests: no python3\n")
+end
+
 -- a missing binary: nothing in the status line, a clear message for commands
 ch.config.bin = "/nonexistent/commit-hike"
 ch.refresh({ wait = true })

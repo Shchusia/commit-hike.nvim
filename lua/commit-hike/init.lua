@@ -29,6 +29,10 @@ local state = {
 -- Labels of :CommitHike status. Route texts come translated from the core.
 local TEXTS = {
   en = {
+    siteFind = "Routes from the site", siteNone = "No routes found on the site", siteOffline = "Can't reach the routes site: check the connection",
+    siteInstalled = "Installed: %s (version %d)", siteReplace = "You have a route of your own with the id %s. Replace it with the one from the site?",
+    walkNow = "Walk it now?", later = "Later", markInstalled = "installed", markUpdate = "update", markBuiltin = "built in", markLocal = "your own",
+    by = "by %s",
     title = "Commit Hike", walked = "Walked", place = "You are at", next = "Next stop", today = "Today", streak = "Streak",
     altitude = "Altitude", finished = "Trail completed", days = "%d days", noJourney = "No trail yet: run :CommitHike route",
     notSetUp = "Commit Hike isn't set up yet: run :CommitHike init", missing = "commit-hike isn't installed: see :help commit-hike-install",
@@ -37,6 +41,10 @@ local TEXTS = {
     scanned = "Counted %d new commits", initDone = "Commit Hike is set up for %s",
   },
   uk = {
+    siteFind = "Маршрути з сайту", siteNone = "На сайті не знайшлося маршрутів", siteOffline = "Не вдається зв'язатися із сайтом маршрутів: перевір з'єднання",
+    siteInstalled = "Встановлено: %s (версія %d)", siteReplace = "У тебе є власний маршрут з ідентифікатором %s. Замінити його маршрутом із сайту?",
+    walkNow = "Іти зараз?", later = "Пізніше", markInstalled = "встановлено", markUpdate = "оновити", markBuiltin = "вбудований", markLocal = "власний",
+    by = "автор: %s",
     title = "Commit Hike", walked = "Пройдено", place = "Ти тут", next = "Наступна зупинка", today = "Сьогодні", streak = "Серія",
     altitude = "Висота", finished = "Стежку пройдено", days = "%d дн.", noJourney = "Стежку ще не вибрано: :CommitHike route",
     notSetUp = "Commit Hike ще не налаштовано: :CommitHike init", missing = "commit-hike не встановлено: див. :help commit-hike-install",
@@ -45,6 +53,10 @@ local TEXTS = {
     scanned = "Пораховано нових комітів: %d", initDone = "Commit Hike налаштовано для %s",
   },
   pl = {
+    siteFind = "Trasy ze strony", siteNone = "Nie znaleziono tras na stronie", siteOffline = "Nie można połączyć się ze stroną tras: sprawdź połączenie",
+    siteInstalled = "Zainstalowano: %s (wersja %d)", siteReplace = "Masz własną trasę o identyfikatorze %s. Zastąpić ją trasą ze strony?",
+    walkNow = "Iść teraz?", later = "Później", markInstalled = "zainstalowana", markUpdate = "aktualizacja", markBuiltin = "wbudowana", markLocal = "własna",
+    by = "autor: %s",
     title = "Commit Hike", walked = "Przebyto", place = "Jesteś tutaj", next = "Następny przystanek", today = "Dzisiaj", streak = "Seria",
     altitude = "Wysokość", finished = "Szlak ukończony", days = "%d dni", noJourney = "Nie wybrano szlaku: :CommitHike route",
     notSetUp = "Commit Hike nie jest jeszcze skonfigurowany: :CommitHike init", missing = "commit-hike nie jest zainstalowany: zob. :help commit-hike-install",
@@ -53,6 +65,10 @@ local TEXTS = {
     scanned = "Policzono nowych commitów: %d", initDone = "Commit Hike skonfigurowany dla %s",
   },
   de = {
+    siteFind = "Routen von der Website", siteNone = "Keine Routen auf der Website gefunden", siteOffline = "Die Routen-Website ist nicht erreichbar: prüfe die Verbindung",
+    siteInstalled = "Installiert: %s (Version %d)", siteReplace = "Du hast eine eigene Route mit der ID %s. Durch die Route von der Website ersetzen?",
+    walkNow = "Jetzt gehen?", later = "Später", markInstalled = "installiert", markUpdate = "Update", markBuiltin = "eingebaut", markLocal = "eigene",
+    by = "von %s",
     title = "Commit Hike", walked = "Gewandert", place = "Du bist hier", next = "Nächster Halt", today = "Heute", streak = "Serie",
     altitude = "Höhe", finished = "Weg geschafft", days = "%d Tage", noJourney = "Noch kein Weg gewählt: :CommitHike route",
     notSetUp = "Commit Hike ist noch nicht eingerichtet: :CommitHike init", missing = "commit-hike ist nicht installiert: siehe :help commit-hike-install",
@@ -61,6 +77,10 @@ local TEXTS = {
     scanned = "Neue Commits gezählt: %d", initDone = "Commit Hike ist eingerichtet für %s",
   },
   es = {
+    siteFind = "Rutas del sitio web", siteNone = "No se encontraron rutas en el sitio", siteOffline = "No se puede conectar con el sitio de rutas: revisa la conexión",
+    siteInstalled = "Instalada: %s (versión %d)", siteReplace = "Tienes una ruta propia con el id %s. ¿Sustituirla por la del sitio?",
+    walkNow = "¿Recorrerla ahora?", later = "Más tarde", markInstalled = "instalada", markUpdate = "actualizar", markBuiltin = "incluida", markLocal = "propia",
+    by = "de %s",
     title = "Commit Hike", walked = "Recorrido", place = "Estás en", next = "Próxima parada", today = "Hoy", streak = "Racha",
     altitude = "Altitud", finished = "Ruta completada", days = "%d días", noJourney = "Aún no hay ruta: :CommitHike route",
     notSetUp = "Commit Hike aún no está configurado: :CommitHike init", missing = "commit-hike no está instalado: ver :help commit-hike-install",
@@ -353,27 +373,29 @@ function commands.init()
   end)
 end
 
-function commands.route(id)
-  local function walk(route_id)
-    local T = texts()
-    vim.ui.select({ true, false }, {
-      prompt = T.history,
-      format_item = function(v)
-        return v and T.yes or T.no
-      end,
-    }, function(history)
-      if history == nil then
-        return
+-- Starts walking a route: asks whether to count the commits already made.
+local function walk(route_id)
+  local T = texts()
+  vim.ui.select({ true, false }, {
+    prompt = T.history,
+    format_item = function(v)
+      return v and T.yes or T.no
+    end,
+  }, function(history)
+    if history == nil then
+      return
+    end
+    core({ "journey", "--scope", "global", "--route", route_id, "--from-history=" .. tostring(history) }, function(ok, data, err)
+      if not ok then
+        return report(data, err)
       end
-      core({ "journey", "--scope", "global", "--route", route_id, "--from-history=" .. tostring(history) }, function(ok, data, err)
-        if not ok then
-          return report(data, err)
-        end
-        M.refresh()
-        commands.status()
-      end)
+      M.refresh()
+      commands.status()
     end)
-  end
+  end)
+end
+
+function commands.route(id)
   if id and id ~= "" then
     return walk(id)
   end
@@ -445,6 +467,97 @@ function commands.lang(code)
   end)
 end
 
+-- ---------------------------------------------------------------- routes from the site
+-- The core talks to the routes website (commit-hike.dev) only for these
+-- two commands: public data, nothing about the user is sent.
+
+local function site_failed(data, err)
+  if err and err.code == "site_unreachable" then
+    return report(texts().siteOffline)
+  end
+  report(data, err)
+end
+
+-- Installs (or updates) a route from the site, then offers to walk it.
+function commands.install(id, replace_local)
+  if not id or id == "" then
+    return commands.find()
+  end
+  local args = { "site", "install", "--id", id }
+  if replace_local then
+    table.insert(args, "--replace-local")
+  end
+  vim.list_extend(args, lang_args())
+  core(args, function(ok, data, err)
+    local T = texts()
+    if not ok then
+      -- the user's own route with this id: ask before replacing it
+      if err and err.code == "route_exists" and not replace_local and not (err.message or ""):match("built%-in") then
+        return vim.ui.select({ true, false }, {
+          prompt = string.format(T.siteReplace, id),
+          format_item = function(v)
+            return v and T.yes:gsub(",.*", "") or T.later
+          end,
+        }, function(yes)
+          if yes then
+            commands.install(id, true)
+          end
+        end)
+      end
+      return site_failed(data, err)
+    end
+    vim.notify(string.format(T.siteInstalled, data.route.name, data.version), vim.log.levels.INFO, { title = "Commit Hike" })
+    vim.ui.select({ true, false }, {
+      prompt = T.walkNow,
+      format_item = function(v)
+        return v and data.route.name or T.later
+      end,
+    }, function(go)
+      if go then
+        walk(id)
+      end
+    end)
+  end)
+end
+
+-- Searches the site's catalogue; picking a route installs (or updates) it.
+function commands.find(text)
+  local args = { "site", "routes" }
+  if text and text ~= "" then
+    vim.list_extend(args, { "--q", text })
+  end
+  vim.list_extend(args, lang_args())
+  core(args, function(ok, page, err)
+    if not ok then
+      return site_failed(page, err)
+    end
+    local T = texts()
+    if #page.routes == 0 then
+      return vim.notify(T.siteNone, vim.log.levels.INFO, { title = "Commit Hike" })
+    end
+    local marks = { site = T.markInstalled, builtin = T.markBuiltin, ["local"] = T.markLocal }
+    vim.ui.select(page.routes, {
+      prompt = T.siteFind,
+      format_item = function(r)
+        local mark = r.update and ("↑ " .. T.markUpdate) or (r.installed and ("✓ " .. marks[r.installed]) or nil)
+        local parts = { r.title, M.distance(r.length_m, editor_lang()), string.format(T.by, r.author) }
+        if mark then
+          table.insert(parts, "[" .. mark .. "]")
+        end
+        return table.concat(parts, " · ")
+      end,
+    }, function(r)
+      if not r then
+        return
+      end
+      if r.installed == "builtin" or (r.installed == "site" and not r.update) then
+        return walk(r.id)
+      end
+      commands.install(r.id) -- your own route with the same id: install asks first
+    end)
+  end)
+end
+
 M.commands = commands
 
 local VALUES = {
@@ -463,7 +576,8 @@ function M.complete(arglead, cmdline)
 end
 
 function M.run(args)
-  local name, value = args[1] or "status", args[2]
+  local name = args[1] or "status"
+  local value = #args > 1 and table.concat(args, " ", 2) or nil
   local fn = commands[name]
   if not fn then
     return vim.notify("Commit Hike: unknown command " .. name, vim.log.levels.ERROR)
